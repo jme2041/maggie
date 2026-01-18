@@ -14,10 +14,8 @@ also depend on software obtained via `vcpkg`.
 
 In this case, it is generally recommended to distribute the library via
 `vcpkg`, so that `vcpkg` can manage both the library and client dependencies
-when building the client. In this example, Maggie's Demonstration Library will
-be distributed via a custom `vcpkg` repository. Additional details about the
-custom repository and a demonstration client will be provided when they are
-created.
+when building the client. In this example, Maggie's Demonstration Library is
+distributed via a custom `vcpkg` repository.
 
 # Getting Started
 
@@ -79,9 +77,97 @@ cmake --build --preset=x64-Debug-MSVC-Shared
 ctest --preset=x64-Debug-MSVC-Shared
 ```
 
-To build, develop, and test using the Visual Studio IDE, use the option to
+To configure, build, and test using the Visual Studio IDE, use the option to
 open a local folder and select the directory that contains the top-level
 `CMakeLists.txt`.
+
+# Consumers
+
+Maggie's Demonstration Library is available through a custom vcpkg registry at
+https://github.com/jme2041/vcpkg-registry. `maggie` is distributed via commit
+hash `15cc49a86acb78926b36a19baa34e314e376e038` or newer.
+
+To build a CMake C or C++ project that depends on `maggie`, run
+`vcpkg new --application` in the directory containing the project's top-level
+`CMakeLists.txt` file. This will create two files, `vcpkg-configuration.json`
+and `vcpkg.json`. Add the custom `vcpkg` registry to `vcpkg-configuration.json`
+so that it looks like this:
+
+```json
+{
+  "default-registry": {
+    "kind": "git",
+    "baseline": "000...",
+    "repository": "https://github.com/microsoft/vcpkg",
+    "reference": "2025.12.12"
+  },
+  "registries": [
+    {
+      "kind": "git",
+      "repository": "https://github.com/jme2041/vcpkg-registry",
+      "reference": "main",
+      "baseline": "000...",
+      "packages": [
+        "maggie"
+      ]
+    }
+  ]
+}
+```
+
+The `default-registry` entry is always needed (this is where `maggie` obtains
+`wil` and the client obtains other dependencies). The `"000..."` in the
+baseline field will be filled in automatically by `vcpkg new --application`,
+but it can be adjusted manually by editing the file. The `reference` can also
+be adjusted as needed.
+
+The `registries` array contains entries for custom registries used by the
+project. Add the entry for `jme2041/vcpkg-registry`, replacing `"000..."` in
+the baseline field with the earliest commit hash of `jme2041/vcpkg-registry` to
+be used by the project. To use `maggie`, this must be the `15cc49...` hash
+listed above or newer. List the packages for which to use the custom registry
+in the `packages` array.
+
+Next, run `vcpkg add port maggie`. This will add an entry for `maggie` to
+`vcpkg.json`:
+
+```
+{
+  "dependencies": [
+    "maggie"
+  ]
+}
+```
+
+If a specific minimum version of `maggie` is needed, the entry for `maggie` in
+`vcpkg.json` can be edited to contain a JSON object with the version
+information:
+
+```json
+{
+  "dependencies": [
+    {
+      "name": "maggie",
+      "version>=": "0.1.0.0"
+    }
+  ]
+}
+```
+
+Finally, add `find_package(maggie CONFIG REQUIRED)` to `CMakeLists.txt` and
+define `CMAKE_TOOLCHAIN_FILE` to point to the `vcpkg` toolchain file.
+From the command line, this is typically
+`-DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake"`. To
+specify whether to link to `maggie` as a shared or static library, set the
+CMake configuration variable `VCPKG_TARGET_TRIPLET`. Common triplets include
+`x64-windows`, `x64-windows-static`, and `x64-windows-static-md`.
+
+Then, in `CMakeLists.txt`, use `find_package(maggie CONFIG REQUIRED)` and link
+to `maggie` using `target_link_libraries(exe_target PRIVATE maggie::maggie)`.
+
+[Amber's Demonstration Client](https://github.com/jme2041/amber) is a small
+executable that uses `maggie`. It has CMake presets that configure CMake
+appropriately and a `CMakeLists.txt` that links `maggie` to the executable.
 
 # License
 
