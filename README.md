@@ -17,6 +17,10 @@ In this case, it is generally recommended to distribute the library via
 when building the client. In this example, Maggie's Demonstration Library is
 distributed via a custom `vcpkg` repository.
 
+A companion project,
+[Treasure's Demonstration Library](https://github.com/jme2041/treasure),
+demonstrates distributing a header-only library via `vcpkg`.
+
 # Getting Started
 
 Requirements:
